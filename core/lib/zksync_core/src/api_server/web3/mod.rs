@@ -312,7 +312,7 @@ impl ApiServer {
         mempool_cache: MempoolCache,
     ) -> anyhow::Result<RpcState> {
         let mut storage = self.updaters_pool.connection_tagged("api").await?;
-        let start_info = BlockStartInfo::new(&mut storage).await?;
+        let start_info = BlockStartInfo::new().await?;
         drop(storage);
 
         // Disable filter API for HTTP endpoints, WS endpoints are unaffected by the `filters_disabled` flag

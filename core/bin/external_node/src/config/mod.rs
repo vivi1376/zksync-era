@@ -253,10 +253,12 @@ pub struct OptionalENConfig {
 
     #[serde(default = "OptionalENConfig::default_l1_batch_commit_data_generator_mode")]
     pub l1_batch_commit_data_generator_mode: L1BatchCommitDataGeneratorMode,
-    //
-    // pub pruning_chunk_size: u64,
-    //
-    // pub min_block_age_to_prune_hours: u64,
+
+    #[serde(default = "OptionalENConfig::default_pruning_chunk_size")]
+    pub pruning_chunk_size: u32,
+
+    /// If set, l1 batches will be pruned after they are that long
+    pub l1_batch_age_to_prune_hours: Option<u64>,
 }
 
 impl OptionalENConfig {
@@ -373,6 +375,10 @@ impl OptionalENConfig {
 
     const fn default_l1_batch_commit_data_generator_mode() -> L1BatchCommitDataGeneratorMode {
         L1BatchCommitDataGeneratorMode::Rollup
+    }
+
+    const fn default_pruning_chunk_size() -> u32 {
+        10
     }
 
     pub fn polling_interval(&self) -> Duration {

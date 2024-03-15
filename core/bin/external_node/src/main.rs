@@ -222,10 +222,13 @@ async fn init_tasks(
         }
     }));
 
-    let pruning_enabled = config.optional.l1_batch_age_to_prune_hours.is_some();
+    let pruning_enabled = config.optional.pruning_data_retention_hours.is_some();
     if pruning_enabled {
         let l1_batch_age_to_prune =
-            Duration::from_secs(3600 * config.optional.l1_batch_age_to_prune_hours.unwrap());
+            Duration::from_secs(3600 * config.optional.pruning_data_retention_hours.unwrap());
+        tracing::info!(
+            "Configured pruning of batches after they become {l1_batch_age_to_prune:?} old"
+        );
         let db_pruner = DbPruner::new(
             DbPrunerConfig {
                 soft_and_hard_pruning_time_delta: Duration::from_secs(60),
@@ -519,13 +522,6 @@ struct Cli {
     /// do not use unless you know what you're doing.
     #[arg(long)]
     enable_consensus: bool,
-    /// Enables application-level snapshot recovery. Required to start a node that was recovered from a snapshot,
-    /// or to initialize a node from a snapshot. Has no effect if a node that was initialized from a Postgres dump
-    /// or was synced from genesis.
-    ///
-    /// This is an experimental and incomplete feature; do not use unless you know what you're doing.
-    #[arg(long)]
-    enable_snapshots_recovery: bool,
 }
 
 #[tokio::main]
@@ -631,7 +627,7 @@ async fn main() -> anyhow::Result<()> {
         &main_node_client,
         &app_health,
         config.remote.l2_chain_id,
-        opt.enable_snapshots_recovery,
+        config.optional.snapshots_recovery_enabled,
     )
     .await?;
     let sigint_receiver = setup_sigint_handler();

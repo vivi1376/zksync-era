@@ -66,8 +66,7 @@ describe('Paymaster tests', () => {
         const tokenDepositHandle = await alice.deposit({
             token: tokenL1address,
             amount: "10000000",
-            // approveERC20: true,
-            bridgeAddress: l2Addresses.erc20.address,
+            approveERC20: true,
         });
         // Note that we wait not only for the L1 transaction to complete but also for it to be
         // processed by zkSync. If we want to wait only for the transaction to be processed on L1,
@@ -75,7 +74,7 @@ describe('Paymaster tests', () => {
         await tokenDepositHandle.wait();
         
         paymaster = await deployContract(alice, contracts.customPaymaster, []);
-        // Supplying paymaster with ETH it would need to cover the fees for the user
+        // // Supplying paymaster with ETH it would need to cover the fees for the user
         await alice.transfer({ to: paymaster.address, amount: L2_ETH_PER_ACCOUNT.div(4) }).then((tx) => tx.wait());
 
         const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(

@@ -229,6 +229,7 @@ async fn init_tasks(
         );
         let db_pruner = DbPruner::new(
             DbPrunerConfig {
+                // don't change this value without adjusting api server pruning info cache max_age
                 soft_and_hard_pruning_time_delta: Duration::from_secs(60),
                 pruned_batch_chunk_size: config.optional.pruning_chunk_size,
                 next_iterations_delay: Duration::from_secs(30),

@@ -155,7 +155,7 @@ impl HandleReorgDetectorEvent for mpsc::UnboundedSender<(MiniblockNumber, L1Batc
 fn create_mock_detector(client: MockMainNodeClient, pool: ConnectionPool<Core>) -> ReorgDetector {
     let (health_check, health_updater) = ReactiveHealthCheck::new("reorg_detector");
     ReorgDetector {
-        client: Box::new(client),
+        client: Arc::new(client),
         event_handler: Box::new(health_updater),
         pool,
         sleep_interval: Duration::from_millis(10),

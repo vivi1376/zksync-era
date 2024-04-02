@@ -1,4 +1,4 @@
-use std::{fmt, time::Duration};
+use std::{fmt, sync::Arc, time::Duration};
 
 use anyhow::Context as _;
 use async_trait::async_trait;
@@ -213,7 +213,7 @@ impl HandleReorgDetectorEvent for HealthUpdater {
 /// and is special-cased in the `zksync_external_node` crate.
 #[derive(Debug)]
 pub struct ReorgDetector {
-    client: Box<dyn MainNodeClient>,
+    client: Arc<dyn MainNodeClient>,
     event_handler: Box<dyn HandleReorgDetectorEvent>,
     pool: ConnectionPool<Core>,
     sleep_interval: Duration,
@@ -223,10 +223,10 @@ pub struct ReorgDetector {
 impl ReorgDetector {
     const DEFAULT_SLEEP_INTERVAL: Duration = Duration::from_secs(5);
 
-    pub fn new(client: HttpClient, pool: ConnectionPool<Core>) -> Self {
+    pub fn new(client: Arc<HttpClient>, pool: ConnectionPool<Core>) -> Self {
         let (health_check, health_updater) = ReactiveHealthCheck::new("reorg_detector");
         Self {
-            client: Box::new(client),
+            client,
             event_handler: Box::new(health_updater),
             pool,
             sleep_interval: Self::DEFAULT_SLEEP_INTERVAL,

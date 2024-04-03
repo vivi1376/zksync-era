@@ -653,6 +653,7 @@ describe('web3 API compatibility tests', () => {
     });
 
     test('Should check sendRawTransaction returns GasPerPubDataLimitZero with 0 gas_per_pubdata_limit', async () => {
+        const gasPrice = await alice.provider.getGasPrice();
         const chainId = (await alice.provider.getNetwork()).chainId;
         const address = zksync.Wallet.createRandom().address;
         const senderNonce = await alice.getTransactionCount();

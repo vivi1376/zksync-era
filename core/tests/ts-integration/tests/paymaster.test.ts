@@ -34,15 +34,10 @@ describe('Paymaster tests', () => {
     let erc20Address: string;
     let erc20: zksync.Contract;
 
-    beforeAll(async () => {
+    beforeAll(() => {
         testMaster = TestMaster.getInstance(__filename);
         alice = testMaster.mainAccount();
-        
         erc20Address = testMaster.environment().erc20Token.l2Address;
-
-        console.log(testMaster.environment());
-        console.log(`erc20 address: ${erc20Address}.`);
-        console.log(`Alice address: ${alice.address}.`);
         erc20 = new zksync.Contract(
             erc20Address,
             zksync.utils.IERC20,
@@ -52,36 +47,9 @@ describe('Paymaster tests', () => {
     });
 
     test('Should deploy a paymaster', async () => {
-        const tokenL1address = testMaster.environment().erc20Token.l1Address;
-        const l2Addresses = await alice.getL1BridgeContracts();
-        console.log(l2Addresses.erc20.address);
-        console.log(l2Addresses.shared.address);
-        const txHandle = await alice.approveERC20(tokenL1address, "10000000", { bridgeAddress: l2Addresses.erc20.address });
-        await txHandle.wait();
-
-        console.log(`Token allowance: ${await alice.getAllowanceL1(tokenL1address, l2Addresses.erc20.address)}`);
-
-        console.log(`Token to be deposited: ${tokenL1address}`);
-        console.log(`L2 token address: ${await alice.l2TokenAddress(tokenL1address)}`);
-        const tokenDepositHandle = await alice.deposit({
-            token: tokenL1address,
-            amount: "10000000",
-            approveERC20: true,
-        });
-        // Note that we wait not only for the L1 transaction to complete but also for it to be
-        // processed by zkSync. If we want to wait only for the transaction to be processed on L1,
-        // we can use `await tokenDepositHandle.waitL1Commit()`
-        await tokenDepositHandle.wait();
-        
         paymaster = await deployContract(alice, contracts.customPaymaster, []);
-        // // Supplying paymaster with ETH it would need to cover the fees for the user
+        // Supplying paymaster with ETH it would need to cover the fees for the user
         await alice.transfer({ to: paymaster.address, amount: L2_ETH_PER_ACCOUNT.div(4) }).then((tx) => tx.wait());
-
-        const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(
-            erc20,
-            alice.address,
-            paymaster.address
-        );
     });
 
     test('Should pay fee with paymaster', async () => {
@@ -90,27 +58,23 @@ describe('Paymaster tests', () => {
         await alice.transfer({ to: paymaster.address, amount: L2_ETH_PER_ACCOUNT.div(4) }).then((tx) => tx.wait());
 
         const correctSignature = new Uint8Array(46);
-        console.log('1');
         const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(
             erc20,
             alice.address,
             paymaster.address
         );
-        console.log('2');
         const tx = await erc20.populateTransaction.transfer(alice.address, AMOUNT, {
             customData: {
                 gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
                 paymasterParams: paymasterParamsForEstimation
             }
         });
-        console.log('3');
         tx.gasLimit = await erc20.estimateGas.transfer(alice.address, AMOUNT, {
             customData: {
                 gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
                 paymasterParams: paymasterParamsForEstimation
             }
         });
-        console.log('4');
         const txPromise = sendTxWithTestPaymasterParams(
             tx,
             alice.provider,
@@ -125,7 +89,6 @@ describe('Paymaster tests', () => {
                 'Fee was not paid (or paid incorrectly)'
             )
         ]);
-        console.log('5');
     });
 
     test('Should call postOp of the paymaster', async () => {
@@ -218,8 +181,6 @@ describe('Paymaster tests', () => {
         });
         const txPromise = alice.sendTransaction({
             ...tx,
-            maxFeePerGas: gasPrice,
-            maxPriorityFeePerGas: gasPrice,
             gasLimit,
             customData: {
                 gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
@@ -236,6 +197,7 @@ describe('Paymaster tests', () => {
     });
 
     test('Should reject tx with invalid paymaster input', async () => {
+        paymaster = await deployContract(alice, contracts.customPaymaster, []);
         const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(
             erc20,
             alice.address,
@@ -420,9 +382,7 @@ async function getTestPaymasterParamsForFeeEstimation(
     // While the "correct" paymaster signature may not be available in the true mainnet
     // paymasters, it is accessible in this test to make the test paymaster simpler.
     const correctSignature = new Uint8Array(46);
-    console.log(1.1);
     const aliceERC20Balance = await erc20.balanceOf(senderAddress);
-    console.log(1.2);
     const paramsForFeeEstimation = zksync.utils.getPaymasterParams(paymasterAddress, {
         type: 'ApprovalBased',
         // For transaction estimation we provide the paymasterInput with large
@@ -434,7 +394,6 @@ async function getTestPaymasterParamsForFeeEstimation(
         // to cover the fee for him.
         innerInput: getTestPaymasterInnerInput(correctSignature, ethers.BigNumber.from(1))
     });
-    console.log(1.3);
     return paramsForFeeEstimation;
 }
 

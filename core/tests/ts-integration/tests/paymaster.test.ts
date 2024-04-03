@@ -53,10 +53,6 @@ describe('Paymaster tests', () => {
     });
 
     test('Should pay fee with paymaster', async () => {
-        paymaster = await deployContract(alice, contracts.customPaymaster, []);
-        // Supplying paymaster with ETH it would need to cover the fees for the user
-        await alice.transfer({ to: paymaster.address, amount: L2_ETH_PER_ACCOUNT.div(4) }).then((tx) => tx.wait());
-
         const correctSignature = new Uint8Array(46);
         const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(
             erc20,
@@ -75,6 +71,7 @@ describe('Paymaster tests', () => {
                 paymasterParams: paymasterParamsForEstimation
             }
         });
+
         const txPromise = sendTxWithTestPaymasterParams(
             tx,
             alice.provider,
@@ -197,7 +194,6 @@ describe('Paymaster tests', () => {
     });
 
     test('Should reject tx with invalid paymaster input', async () => {
-        paymaster = await deployContract(alice, contracts.customPaymaster, []);
         const paymasterParamsForEstimation = await getTestPaymasterParamsForFeeEstimation(
             erc20,
             alice.address,
@@ -382,6 +378,7 @@ async function getTestPaymasterParamsForFeeEstimation(
     // While the "correct" paymaster signature may not be available in the true mainnet
     // paymasters, it is accessible in this test to make the test paymaster simpler.
     const correctSignature = new Uint8Array(46);
+
     const aliceERC20Balance = await erc20.balanceOf(senderAddress);
     const paramsForFeeEstimation = zksync.utils.getPaymasterParams(paymasterAddress, {
         type: 'ApprovalBased',
@@ -394,6 +391,7 @@ async function getTestPaymasterParamsForFeeEstimation(
         // to cover the fee for him.
         innerInput: getTestPaymasterInnerInput(correctSignature, ethers.BigNumber.from(1))
     });
+
     return paramsForFeeEstimation;
 }
 
